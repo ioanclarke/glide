@@ -3,7 +3,7 @@ import arcade as arc
 from views import menu
 
 
-GAME_TITLE = 'Glide'
+GAME_TITLE = 'glide'
 
 
 def main():

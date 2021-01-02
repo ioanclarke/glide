@@ -2,9 +2,10 @@ import arcade as arc
 
 import engine
 import gametools as gt
-
+from views import end
 LEFT = 0
 RIGHT = 1
+NUM_OF_LEVELS = 3
 
 
 class Game(arc.View):
@@ -17,6 +18,7 @@ class Game(arc.View):
         self.wall_list = None
         self.finish_list = None
         self.player_list = None
+        self.total_time = 0.0
         self.setup()
 
     def setup(self):
@@ -51,40 +53,29 @@ class Game(arc.View):
         arc.draw_text(level_text, 5 + self.eng.view_left, 10 + self.eng.view_bottom, arc.csscolor.MIDNIGHT_BLUE, 30,
                       font_name='Ubuntu Light')
 
+        time_elapsed = gt.format_time(self.total_time)
+        arc.draw_text(time_elapsed, 200 + self.eng.view_left, 10 + self.eng.view_bottom, arc.csscolor.MIDNIGHT_BLUE, 30,
+                      font_name='Ubuntu Light')
+
     def on_key_press(self, key, modifiers):
-        if key == arc.key.SPACE:
-            self.eng.jumping()
-
-        # Sets key_press variables when pressed
-        if key == arc.key.RIGHT:
-            self.eng.right_pressed = True
-            self.eng.player_sprite.update_facing(RIGHT)
-        elif key == arc.key.LEFT:
-            self.eng.left_pressed = True
-            self.eng.player_sprite.update_facing(LEFT)
-
-        if key == arc.key.R:
-            self.eng.devreset()
-        if key == arc.key.G:
-            self.eng.G_pressed = not self.eng.G_pressed
-
-        # Outputs player's coordinates to screen when P is pressed
-        if key == arc.key.P:
-            self.eng.devcoords()
+        self.eng.key_pressed(key)
 
     def on_key_release(self, key, modifiers):
-        # Set key press variables when released
-        if key == arc.key.LEFT:
-            self.eng.left_pressed = False
-        elif key == arc.key.RIGHT:
-            self.eng.right_pressed = False
+        self.eng.key_released(key)
 
     def update(self, delta_time):
         # Update the engine (effectively the gamestate)
         self.eng.update_player()
+        self.eng.player_sprite.update_animation()
+        self.total_time += delta_time
         if self.eng.collide_next_level():
-            self.level += 1
-            self.setup()
+            if self.level == NUM_OF_LEVELS:
+                end_scr = end.End(self.total_time)
+                self.window.show_view(end_scr)
+            else:
+                self.level += 1
+                self.setup()
+        # self.eng.update
 
     def show_next_level(self):
         pass

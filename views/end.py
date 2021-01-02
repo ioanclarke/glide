@@ -1,17 +1,18 @@
 import arcade as arc
-
-import gametools as gt
 from engine import Engine
 from views import game
+import gametools as gt
 
 LEFT = 0
 RIGHT = 1
 
 
-class Menu(arc.View):
-    def __init__(self):
+class End(arc.View):
+    def __init__(self, time_elapsed):
         super().__init__()
+        self.time_elapsed = time_elapsed
         self.eng = Engine()
+
         self.width, self.height = gt.get_window_size()
         # Create player and put in location
         self.eng.create_player()
@@ -25,8 +26,7 @@ class Menu(arc.View):
         self.play_list = self.eng.play_list
         self.quit_list = self.eng.quit_list
         self.player_list = self.eng.player_list
-        bg_color = gt.choose_colour()
-        arc.set_background_color(bg_color)
+        arc.set_background_color(arc.color.LIGHT_YELLOW)
 
     def on_draw(self):
         # Clears the screen ready to draw
@@ -38,11 +38,11 @@ class Menu(arc.View):
         self.quit_list.draw()
         self.player_list.draw()
 
+        display_time = gt.format_time(self.time_elapsed, milli=True)
         # Display Play and Quit text on screen
-        arc.draw_text('Play', self.width * 0.5, self.height // 2.5, arc.csscolor.MIDNIGHT_BLUE, 32,
-                      font_name='Ubuntu')
-        arc.draw_text('Quit', self.width * 0.12, self.height // 2.5, arc.csscolor.MIDNIGHT_BLUE, 32,
-                      font_name='Ubuntu')
+        arc.draw_text('Restart', self.width * 0.48, self.height // 2.5, arc.csscolor.MIDNIGHT_BLUE, 32, font_name='Ubuntu-Th')
+        arc.draw_text('Quit', self.width * 0.12, self.height // 2.5, arc.csscolor.MIDNIGHT_BLUE, 32, font_name='Ubuntu-Th')
+        arc.draw_text(f'Time: {display_time}', self.width // 4.5, self.height // 2, arc.csscolor.CRIMSON, 40)
 
     def on_key_press(self, key, modifiers):
         self.eng.key_pressed(key)

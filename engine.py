@@ -4,15 +4,16 @@ from arcade.physics_engines import _move_sprite
 import player
 import gametools as gt
 
-# Game window features
-GAME_TITLE = "Glide"
-
 # Player movement
 JUMP_SPEED = 16
 MAX_SPEED = 9
 GOD_MODE_SPEED = 18
 ACCELERATION_RATE = 0.33
 FRICTION = 0.15
+
+# Player directions
+LEFT = 0
+RIGHT = 1
 
 # Margin of pixels for every side of the player
 LEFT_VIEWPORT_MARGIN = 700
@@ -59,22 +60,100 @@ class Engine:
         my_map = arc.tilemap.read_tmx(map_name)
         self.wall_list = arc.tilemap.process_layer(map_object=my_map, layer_name='platforms', scaling=TILE_SCALING)
         self.finish_list = arc.tilemap.process_layer(map_object=my_map, layer_name='finish', scaling=TILE_SCALING)
+        # #Creates the moving platform on level 1
+        # if self.level == 1:
+        # 	moving_box = arc.Sprite('images/box/box.png', TILE_SCALING)
+        # 	moving_box.center_x = 7.5*TILE_SIZE
+        # 	moving_box.center_y = 1.5*TILE_SIZE
+        # 	moving_box.boundary_left = 42*TILE_SIZE
+        # 	moving_box.boundary_right = 54*TILE_SIZE
+        # 	moving_box.change_x = -2
+        # 	self.wall_list.append(moving_box)
 
-    # #Creates the moving platform on level 1
-    # if self.level == 1:
-    # 	moving_box = arc.Sprite('images/box/box.png', TILE_SCALING)
-    # 	moving_box.center_x = 7.5*TILE_SIZE
-    # 	moving_box.center_y = 1.5*TILE_SIZE
-    # 	moving_box.boundary_left = 42*TILE_SIZE
-    # 	moving_box.boundary_right = 54*TILE_SIZE
-    # 	moving_box.change_x = -2
-    # 	self.wall_list.append(moving_box)
+    def collide_play(self):
+        # Start game when user goes to Play
+        if arc.check_for_collision_with_list(self.player_sprite, self.play_list):
+            print('Starting game...\n')
+            return True
+        else:
+            return False
+
+    def collide_quit(self):
+        # Exit game when user goes to Quit
+        if arc.check_for_collision_with_list(self.player_sprite, self.quit_list):
+            return True
+        else:
+            return False
+
+    def collide_next_level(self):
+        if arc.check_for_collision_with_list(self.player_sprite, self.finish_list):
+            return True
+        else:
+            return False
 
     def create_player(self):
         # Create the player
         self.player_list = arc.SpriteList()
         self.player_sprite = player.Player()
-        self.player_list.append(self.player_sprite)  # TODO change this to return values instead of setting them
+        self.player_list.append(self.player_sprite)
+
+    def update_player(self):
+        # Add gravity
+        self.player_sprite.change_y -= GRAVITY
+        # Add friction
+        self.friction()
+
+        # Controls movement based on key pressed
+        if self.right_pressed:
+            self.gliding('right', self.wall_list)
+        if self.left_pressed:
+            self.gliding('left', self.wall_list)
+        self.scrolling()
+
+        # This code is taken from the Arcade module
+        _move_sprite(self.player_sprite, self.wall_list, ramp_up=True)
+
+        for platform in self.wall_list:
+            if platform.change_x != 0 or platform.change_y != 0:
+                platform.center_x += platform.change_x
+
+                if platform.boundary_left is not None \
+                        and platform.left <= platform.boundary_left:
+                    platform.left = platform.boundary_left
+                    if platform.change_x < 0:
+                        platform.change_x *= -1
+
+                if platform.boundary_right is not None \
+                        and platform.right >= platform.boundary_right:
+                    platform.right = platform.boundary_right
+                    if platform.change_x > 0:
+                        platform.change_x *= -1
+
+                if arc.check_for_collision(self.player_sprite, platform):
+                    if platform.change_x < 0:
+                        self.player_sprite.right = platform.left
+                    if platform.change_x > 0:
+                        self.player_sprite.left = platform.right
+
+                platform.center_y += platform.change_y
+
+                if platform.boundary_top is not None \
+                        and platform.top >= platform.boundary_top:
+                    platform.top = platform.boundary_top
+                    if platform.change_y > 0:
+                        platform.change_y *= -1
+
+                if platform.boundary_bottom is not None \
+                        and platform.bottom <= platform.boundary_bottom:
+                    platform.bottom = platform.boundary_bottom
+                    if platform.change_y < 0:
+                        platform.change_y *= -1
+        # End of Arcade code
+
+        self.fallreset()
+
+    def update_player_facing(self, keypress):
+        self.player_sprite.direction = keypress
 
     def reset_player(self):
         window_width, window_height = gt.get_window_size()
@@ -82,6 +161,34 @@ class Engine:
         self.player_sprite.center_y = window_height / 2
         self.player_sprite.change_x = 0
         self.player_sprite.change_y = 0
+
+    def key_pressed(self, key):
+        if key == arc.key.SPACE:
+            self.jumping()
+
+        # Sets key_press variables when pressed
+        if key == arc.key.RIGHT:
+            self.right_pressed = True
+            self.update_player_facing(RIGHT)
+        elif key == arc.key.LEFT:
+            self.left_pressed = True
+            self.update_player_facing(LEFT)
+
+        if key == arc.key.R:
+            self.devreset()
+        if key == arc.key.G:
+            self.G_pressed = not self.G_pressed
+
+        # Outputs player's coordinates to screen when P is pressed
+        if key == arc.key.P:
+            self.devcoords()
+
+    def key_released(self, key):
+        # Set key press variables when released
+        if key == arc.key.LEFT:
+            self.left_pressed = False
+        elif key == arc.key.RIGHT:
+            self.right_pressed = False
 
     def gliding(self, direction, wall_list):
         # Controls player's horiztonal acceleration
@@ -212,79 +319,3 @@ class Engine:
         # Prints player's position to the console
         print(f'x pos: {round(self.player_sprite.center_x, 2)}')
         print(f'y pos: {round(self.player_sprite.center_y, 2)}\n')
-
-    def update_player(self):
-        # Add gravity
-        self.player_sprite.change_y -= GRAVITY
-        # Add friction
-        self.friction()
-
-        # Controls movement based on key pressed
-        if self.right_pressed:
-            self.gliding('right', self.wall_list)
-        if self.left_pressed:
-            self.gliding('left', self.wall_list)
-        self.scrolling()
-
-        # This code is taken from the Arcade module
-        _move_sprite(self.player_sprite, self.wall_list, ramp_up=True)
-
-        for platform in self.wall_list:
-            if platform.change_x != 0 or platform.change_y != 0:
-                platform.center_x += platform.change_x
-
-                if platform.boundary_left is not None \
-                        and platform.left <= platform.boundary_left:
-                    platform.left = platform.boundary_left
-                    if platform.change_x < 0:
-                        platform.change_x *= -1
-
-                if platform.boundary_right is not None \
-                        and platform.right >= platform.boundary_right:
-                    platform.right = platform.boundary_right
-                    if platform.change_x > 0:
-                        platform.change_x *= -1
-
-                if arc.check_for_collision(self.player_sprite, platform):
-                    if platform.change_x < 0:
-                        self.player_sprite.right = platform.left
-                    if platform.change_x > 0:
-                        self.player_sprite.left = platform.right
-
-                platform.center_y += platform.change_y
-
-                if platform.boundary_top is not None \
-                        and platform.top >= platform.boundary_top:
-                    platform.top = platform.boundary_top
-                    if platform.change_y > 0:
-                        platform.change_y *= -1
-
-                if platform.boundary_bottom is not None \
-                        and platform.bottom <= platform.boundary_bottom:
-                    platform.bottom = platform.boundary_bottom
-                    if platform.change_y < 0:
-                        platform.change_y *= -1
-        # End of Arcade code
-
-        self.fallreset()
-
-    def collide_play(self):
-        # Start game when user goes to Play
-        if arc.check_for_collision_with_list(self.player_sprite, self.play_list):
-            print('Starting game...\n')
-            return True
-        else:
-            return False
-
-    def collide_quit(self):
-        # Exit game when user goes to Quit
-        if arc.check_for_collision_with_list(self.player_sprite, self.quit_list):
-            return True
-        else:
-            return False
-
-    def collide_next_level(self):
-        if arc.check_for_collision_with_list(self.player_sprite, self.finish_list):
-            return True
-        else:
-            return False
