@@ -14,7 +14,6 @@ class Menu(arc.View):
 
         # Load the map and physics engine
         self.eng.load_map_menu()
-        self.eng.create_physics_engine()
 
         # Load the walls and player
         self.wall_list = self.eng.wall_list

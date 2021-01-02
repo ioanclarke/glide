@@ -1,6 +1,7 @@
-import pyautogui as pyg
-import arcade as arc
 import random
+
+import arcade as arc
+import pyautogui as pyg
 
 
 def get_window_size():
@@ -17,3 +18,7 @@ def choose_colour():
     colour = random.choice(background_colours)
     return colour
 
+
+def load_texture_pair(filename):
+    return (arc.load_texture(filename, mirrored=True),
+            arc.load_texture(filename))

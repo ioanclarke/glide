@@ -1,15 +1,8 @@
 import arcade as arc
-from arcade import Sprite, SpriteList
 from arcade.physics_engines import _move_sprite
 
 import player
-import os
-import sys
-import window
-import pyautogui as pyg
-import random
 import gametools as gt
-from views import game, menu
 
 # Game window features
 GAME_TITLE = "Glide"
@@ -37,21 +30,23 @@ TILE_SCALING = 1
 class Engine:
     def __init__(self):
         self.G_pressed = False
+        self.R_pressed = False
         self.right_pressed = False
         self.left_pressed = False
         self.can_jump = True
         self.view_left = 0
         self.view_bottom = 0
-
-    def create_physics_engine(self):
-        # Create physics engine
-        print('calling physics engine...')
-        # self.physics_engine = PhysicsEnginePlatformer(self.player_sprite, self.wall_list, GRAVITY)
+        self.wall_list = None
+        self.play_list = None
+        self.quit_list = None
+        self.finish_list = None
+        self.player_list = None
+        self.player_sprite = None
 
     def load_map_menu(self):
         # map_name = (os.path.abspath('///home/ioan/binn/glide/maps/mapmenu.tmx'))
-        map_name = ('maps/map0.tmx')
-        print(f'\n\n\nLoading map: {map_name}')
+        map_name = 'maps/map0.tmx'
+        print(f'Loading map: {map_name}\n')
         my_map = arc.tilemap.read_tmx(map_name)
         self.wall_list = arc.tilemap.process_layer(map_object=my_map, layer_name='platforms', scaling=TILE_SCALING)
         self.play_list = arc.tilemap.process_layer(map_object=my_map, layer_name='play', scaling=TILE_SCALING)
@@ -60,7 +55,7 @@ class Engine:
     def load_map_game(self, level):
         # Load the map and set up variables
         map_name = f'maps/map{level}.tmx'
-        print(f'Loading map: {map_name}')
+        print(f'Loading map: {map_name}\n')
         my_map = arc.tilemap.read_tmx(map_name)
         self.wall_list = arc.tilemap.process_layer(map_object=my_map, layer_name='platforms', scaling=TILE_SCALING)
         self.finish_list = arc.tilemap.process_layer(map_object=my_map, layer_name='finish', scaling=TILE_SCALING)
@@ -79,7 +74,7 @@ class Engine:
         # Create the player
         self.player_list = arc.SpriteList()
         self.player_sprite = player.Player()
-        self.player_list.append(self.player_sprite)
+        self.player_list.append(self.player_sprite)  # TODO change this to return values instead of setting them
 
     def reset_player(self):
         window_width, window_height = gt.get_window_size()
@@ -91,16 +86,14 @@ class Engine:
     def gliding(self, direction, wall_list):
         # Controls player's horiztonal acceleration
         if direction == 'right':
-            self.player_sprite.center_x += 1
-            if not arc.check_for_collision_with_list(self.player_sprite, wall_list):
-                self.player_sprite.change_x += ACCELERATION_RATE
-            self.player_sprite.center_x -= 1
+            vel_dir = 1
+        else:
+            vel_dir = -1
 
-        if direction == 'left':
-            self.player_sprite.center_x -= 1
-            if not arc.check_for_collision_with_list(self.player_sprite, wall_list):
-                self.player_sprite.change_x -= ACCELERATION_RATE
-            self.player_sprite.center_x += 1
+        self.player_sprite.center_x += vel_dir
+        if not arc.check_for_collision_with_list(self.player_sprite, wall_list):
+            self.player_sprite.change_x += ACCELERATION_RATE * vel_dir
+        self.player_sprite.center_x -= vel_dir
 
     def max_speed(self):
         # Controls maximum speed of player (including God mode)
@@ -180,18 +173,18 @@ class Engine:
 
         # If we changed the boundary values, update the view port to match
         if changed:
-            # print(f'left: {self.view_left}\nright: {screen_width + self.view_left}\nbottom: {self.view_bottom}\ntop: {screen_height + self.view_bottom}\n')
             arc.set_viewport(self.view_left, window_width * 0.8 + self.view_left, self.view_bottom,
                              window_height * 0.8 + self.view_bottom)
 
     def fallreset(self):
         # Reset the player if they fall off the map
-        if self.player_sprite.center_y < -1000:
+        reset_distance = -500
+        if self.player_sprite.center_y < reset_distance:
+            print('off map')
             self.view_left = 0
             self.view_bottom = 0
-            self.player_sprite.center_x = PLAYER_START_X
-            self.player_sprite.center_y = PLAYER_START_Y
-            changed = True
+            self.reset_player()
+            # self.changed = True
 
     def godglide(self):
         # Controls God mode movement
@@ -212,10 +205,8 @@ class Engine:
         if self.R_pressed:
             self.view_left = 0
             self.view_bottom = 0
-            self.player_sprite.center_x = PLAYER_START_X
-            self.player_sprite.center_y = PLAYER_START_Y
-            changed = True
             self.R_pressed = False
+            self.reset_player()
 
     def devcoords(self):
         # Prints player's position to the console
@@ -223,10 +214,9 @@ class Engine:
         print(f'y pos: {round(self.player_sprite.center_y, 2)}\n')
 
     def update_player(self):
-        # Updates physics
-        # self.physics_engine.update()
+        # Add gravity
         self.player_sprite.change_y -= GRAVITY
-
+        # Add friction
         self.friction()
 
         # Controls movement based on key pressed
@@ -234,14 +224,10 @@ class Engine:
             self.gliding('right', self.wall_list)
         if self.left_pressed:
             self.gliding('left', self.wall_list)
-        # self.scrolling()
         self.scrolling()
 
-
-        # --- Add gravity
-        # self.player_sprite.change_y -= self.gravity_constant
-
-        complete_hit_list = _move_sprite(self.player_sprite, self.wall_list, ramp_up=True)
+        # This code is taken from the Arcade module
+        _move_sprite(self.player_sprite, self.wall_list, ramp_up=True)
 
         for platform in self.wall_list:
             if platform.change_x != 0 or platform.change_y != 0:
@@ -278,8 +264,9 @@ class Engine:
                     platform.bottom = platform.boundary_bottom
                     if platform.change_y < 0:
                         platform.change_y *= -1
+        # End of Arcade code
 
-        return complete_hit_list
+        self.fallreset()
 
     def collide_play(self):
         # Start game when user goes to Play

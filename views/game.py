@@ -3,6 +3,9 @@ import arcade as arc
 import engine
 import gametools as gt
 
+LEFT = 0
+RIGHT = 1
+
 
 class Game(arc.View):
     def __init__(self):
@@ -11,6 +14,9 @@ class Game(arc.View):
         self.level = 1
         self.eng = engine.Engine()
         self.eng.create_player()
+        self.wall_list = None
+        self.finish_list = None
+        self.player_list = None
         self.setup()
 
     def setup(self):
@@ -19,7 +25,6 @@ class Game(arc.View):
 
         # Load the map and physics engine
         self.eng.load_map_game(self.level)
-        self.eng.create_physics_engine()
 
         # Create the Sprite lists
         self.wall_list = self.eng.wall_list
@@ -43,7 +48,8 @@ class Game(arc.View):
 
         # Draw scrolling level indicator
         level_text = f'Level: {self.level}'
-        arc.draw_text(level_text, 5, 10, arc.csscolor.MIDNIGHT_BLUE, 30, font_name='Ubuntu-Th')
+        arc.draw_text(level_text, 5 + self.eng.view_left, 10 + self.eng.view_bottom, arc.csscolor.MIDNIGHT_BLUE, 30,
+                      font_name='Ubuntu Light')
 
     def on_key_press(self, key, modifiers):
         if key == arc.key.SPACE:
@@ -52,10 +58,10 @@ class Game(arc.View):
         # Sets key_press variables when pressed
         if key == arc.key.RIGHT:
             self.eng.right_pressed = True
-            self.eng.player_sprite.update_facing('right')
+            self.eng.player_sprite.update_facing(RIGHT)
         elif key == arc.key.LEFT:
             self.eng.left_pressed = True
-            self.eng.player_sprite.update_facing('left')
+            self.eng.player_sprite.update_facing(LEFT)
 
         if key == arc.key.R:
             self.eng.devreset()
