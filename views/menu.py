@@ -6,6 +6,7 @@ from views import game
 
 LEFT = 0
 RIGHT = 1
+FONT = 'consola'
 
 
 class Menu(arc.View):
@@ -40,9 +41,9 @@ class Menu(arc.View):
 
         # Display Play and Quit text on screen
         arc.draw_text('Play', self.width * 0.5, self.height // 2.5, arc.csscolor.MIDNIGHT_BLUE, 32,
-                      font_name='Ubuntu')
+                      font_name=FONT)
         arc.draw_text('Quit', self.width * 0.12, self.height // 2.5, arc.csscolor.MIDNIGHT_BLUE, 32,
-                      font_name='Ubuntu')
+                      font_name=FONT)
 
     def on_key_press(self, key, modifiers):
         self.eng.key_pressed(key)

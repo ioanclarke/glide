@@ -35,3 +35,19 @@ def format_time(time, milli=False):
         return f'{minutes:02d}:{seconds:02d}.{milli:02d}'
     else:
         return f'{minutes:02d}:{seconds:02d}'
+
+
+def calculate_best_time(new_time):
+    try:
+        with open('besttime.txt', 'r') as fin:
+            best_time = float(fin.read())
+        if new_time < best_time:
+            best_time = new_time
+            with open('besttime.txt', 'w') as fout:
+                fout.write(str(best_time))
+    except FileNotFoundError:
+        best_time = new_time
+        with open('besttime.txt', 'w') as fout:
+            fout.write(str(best_time))
+
+    return best_time

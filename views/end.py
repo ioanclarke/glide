@@ -1,10 +1,13 @@
 import arcade as arc
+
+import gametools as gt
 from engine import Engine
 from views import game
-import gametools as gt
 
 LEFT = 0
 RIGHT = 1
+
+FONT = 'consola'
 
 
 class End(arc.View):
@@ -38,11 +41,17 @@ class End(arc.View):
         self.quit_list.draw()
         self.player_list.draw()
 
+        best_time = gt.calculate_best_time(self.time_elapsed)
+        display_best_time = gt.format_time(best_time, milli=True)
         display_time = gt.format_time(self.time_elapsed, milli=True)
+
         # Display Play and Quit text on screen
-        arc.draw_text('Restart', self.width * 0.48, self.height // 2.5, arc.csscolor.MIDNIGHT_BLUE, 32, font_name='Ubuntu-Th')
-        arc.draw_text('Quit', self.width * 0.12, self.height // 2.5, arc.csscolor.MIDNIGHT_BLUE, 32, font_name='Ubuntu-Th')
-        arc.draw_text(f'Time: {display_time}', self.width // 4.5, self.height // 2, arc.csscolor.CRIMSON, 40)
+        arc.draw_text('Restart', self.width * 0.48, self.height // 2.5, arc.csscolor.MIDNIGHT_BLUE, 32, font_name=FONT)
+        arc.draw_text('Quit', self.width * 0.12, self.height // 2.5, arc.csscolor.MIDNIGHT_BLUE, 32, font_name=FONT)
+        arc.draw_text(f'Time: {display_time}', self.width // 4.5, self.height // 2, arc.csscolor.CRIMSON, 40,
+                      font_name=FONT)
+        arc.draw_text(f'Best: {display_best_time}', self.width // 4.5, self.height // 1.5, arc.csscolor.CRIMSON, 40,
+                      font_name=FONT)
 
     def on_key_press(self, key, modifiers):
         self.eng.key_pressed(key)

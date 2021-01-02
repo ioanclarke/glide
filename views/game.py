@@ -3,9 +3,11 @@ import arcade as arc
 import engine
 import gametools as gt
 from views import end
+
 LEFT = 0
 RIGHT = 1
 NUM_OF_LEVELS = 3
+FONT = 'consola'
 
 
 class Game(arc.View):
@@ -14,6 +16,7 @@ class Game(arc.View):
         # Declare map variables
         self.level = 1
         self.eng = engine.Engine()
+        self.width, self.height = gt.get_window_size()
         self.eng.create_player()
         self.wall_list = None
         self.finish_list = None
@@ -50,12 +53,12 @@ class Game(arc.View):
 
         # Draw scrolling level indicator
         level_text = f'Level: {self.level}'
-        arc.draw_text(level_text, 5 + self.eng.view_left, 10 + self.eng.view_bottom, arc.csscolor.MIDNIGHT_BLUE, 30,
-                      font_name='Ubuntu Light')
+        arc.draw_text(level_text, 45 + self.eng.view_left, 10 + self.eng.view_bottom, arc.csscolor.MIDNIGHT_BLUE, 30,
+                      font_name=FONT)
 
         time_elapsed = gt.format_time(self.total_time)
-        arc.draw_text(time_elapsed, 200 + self.eng.view_left, 10 + self.eng.view_bottom, arc.csscolor.MIDNIGHT_BLUE, 30,
-                      font_name='Ubuntu Light')
+        arc.draw_text(time_elapsed, self.width * 0.7 + self.eng.view_left, 10 + self.eng.view_bottom,
+                      arc.csscolor.MIDNIGHT_BLUE, 30, font_name=FONT)
 
     def on_key_press(self, key, modifiers):
         self.eng.key_pressed(key)
@@ -69,13 +72,9 @@ class Game(arc.View):
         self.eng.player_sprite.update_animation()
         self.total_time += delta_time
         if self.eng.collide_next_level():
-            if self.level == NUM_OF_LEVELS:
+            if self.level == NUM_OF_LEVELS - 2:
                 end_scr = end.End(self.total_time)
                 self.window.show_view(end_scr)
             else:
                 self.level += 1
                 self.setup()
-        # self.eng.update
-
-    def show_next_level(self):
-        pass
